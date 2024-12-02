@@ -100,6 +100,8 @@
 
         const CYCLE_INTERVAL = 1500;
         const FIRST_OPTION_MULTIPLIER = 2;
+        const ELEVENLABS_API_KEY = 'sk_80e7ddb1a07269362a481699bf39e2195342f4d1346e6f73';
+        const VOICE_ID = 'IYxAfb7K9Tl9y4KQRKES';
 
         // Initialize state variables
         let currentScreen = "screen1";
@@ -372,13 +374,22 @@
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.rate = 1.0;  // Set a consistent speech rate
             
-            // Clean up the text for letters
-            let cleanText = text;
-            if (text.length === 1 && text.match(/[A-Z]/)) {
-                cleanText = text.toLowerCase();  // Just say the letter without "capital"
+            // If the text is "Read", speak the typed buffer instead
+            if (text === "Read") {
+                if (typingBuffer.trim() === "") {
+                    utterance.text = "Nothing has been typed yet";
+                } else {
+                    utterance.text = typingBuffer;
+                }
+            } else {
+                // Clean up the text for letters
+                let cleanText = text;
+                if (text.length === 1 && text.match(/[A-Z]/)) {
+                    cleanText = text.toLowerCase();  // Just say the letter without "capital"
+                }
+                utterance.text = cleanText;
             }
             
-            utterance.text = cleanText;
             window.speechSynthesis.speak(utterance);
         }
 
