@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Communication App</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; }
+        .container { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; }
+        .option { font-size: 24px; margin: 20px; }
+        .button { padding: 20px 40px; font-size: 18px; cursor: pointer; margin: 10px; }
+        #typedText { margin-top: 20px; font-size: 24px; }
+        .options-preview { font-size: 18px; margin-bottom: 20px; color: gray; text-align: left; }
+        * {
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+        #selectButton {
+            -webkit-user-select: auto;
+            -moz-user-select: auto;
+            -ms-user-select: auto;
+            user-select: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="options-preview" id="allOptions"></div>
+        <div class="option" id="currentOption"></div>
+        <div id="typedText"></div>
+        <button class="button" id="selectButton">Tap to Select</button>
+    </div>
+
+    <script>
+        // First, define all the screens and constants
+        const screens = {
+            screen1: ["Yes", "No", "Common Phrases", "Typing"],
+            screen2: ["Pee", "Poop", "Pain", "Shift Position", "Phlegm", "iTerraCare", "Scratch"],
+            screen3: [
+                ["A", "B", "C", "D", "Delete Letter", "Space"],
+                ["E", "F", "G", "H", "Delete Word", "Number"],
+                ["I", "J", "K", "L", "M", "N"],
+                ["O", "P", "Q", "R", "S", "T"],
+                ["U", "V", "W", "X", "Y", "Z"],
+                ["Clear", "Read"]
+            ],
+            numbers: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "0"],
+            painScreen: ["Arm/Hand pain", "Legs/Feet pain", "Backside pain", "Stomach pain", "Chest pain", "Head/Neck pain"],
+            positionScreen: ["Turn", "Pull Up", "Raise Arms", "Raise Legs", "Lower Arms", "Lower Legs", "Raise Bed", "Lower Bed"],
+            scratchScreen: ["Arm/Hand scratch", "Legs/Feet scratch", "Backside scratch", "Stomach scratch", "Chest scratch", "Head/Neck scratch"],
+            doneScreen: ["Clear", "Read"]
+        };
+
+        const CYCLE_INTERVAL = 1500;
+        const FIRST_OPTION_MULTIPLIER = 2;
+
+        // Initialize state variables
+        let currentScreen = "screen1";
+        let currentIndex = 0;
+        let typingBuffer = "";
+        let selectedRow = [];
+        let isFirstOption = true;
+
+        // Get DOM elements
+        const allOptionsDisplay = document.getElementById("allOptions");
+        const optionDisplay = document.getElementById("currentOption");
+        const typedTextDisplay = document.getElementById("typedText");
+        const selectButton = document.getElementById("selectButton");
+
+        // Initialize the app
+        function initializeApp() {
+            // Make all elements unfocusable except the select button
+            document.querySelectorAll('*').forEach(element => {
+                if (element.id !== 'selectButton') {
+                    element.tabIndex = -1;
+                    element.setAttribute('aria-hidden', 'true');
+                }
+            });
+
+            // Ensure select button is focusable
+            const selectButton = document.getElementById('selectButton');
+            selectButton.tabIndex = 0;
+            selectButton.setAttribute('aria-label', 'Tap to Select');
+
+            updateDisplay();
+            startCycling();
+        }
+
+        // Make sure the DOM is fully loaded before initializing
+        document.addEventListener("DOMContentLoaded", initializeApp);
+
+        function getOptionsForScreen(screen) {
+            if (screen === "screen1") {
+                return screens[screen];
+            } else if (screen === "screen3") {
+                const options = ["BACK", 
+                    screens.screen3[0].join(", "),
+                    screens.screen3[1].join(", "),
+                    screens.screen3[2].join(", "),
+                    screens.screen3[3].join(", "),
+                    screens.screen3[4].join(", "),
+                    screens.screen3[5].join(" | ")  // Clear | Read
+                ];
+                console.log("Screen3 options:", options); // Debug log
+                return options;
+            } else if (screen === "doneScreen") {
+                return ["BACK", ...screens[screen]];
+            } else if (screen === "painScreen" || screen === "positionScreen" || screen === "scratchScreen") {
+                return ["BACK", ...screens[screen]];
+            } else if (screen === "screen2") {
+                return ["BACK", ...screens[screen]];
+            } else {
+                return screens[screen];
+            }
+        }
+
+        function updateDisplay() {
+            if (currentScreen === "screen3") {
+                // Always show all rows
+                allOptionsDisplay.innerHTML = screens.screen3
+                    .map(row => row.join(" | "))
+                    .map(line => `<div>${line}</div>`)
+                    .join("");
+                
+                // Show current selection
+                if (currentIndex === 0) {
+                    optionDisplay.textContent = "BACK";
+                } else {
+                    const rowIndex = currentIndex - 1;
+                    if (rowIndex < screens.screen3.length) {
+                        // Check if we're on the last row (Clear|Read)
+                        if (rowIndex === screens.screen3.length - 1) {
+                            optionDisplay.textContent = screens.screen3[5].join(" | ");  // Display as "Clear | Read"
+                        } else {
+                            optionDisplay.textContent = screens.screen3[rowIndex].join(", ");
+                        }
+                    }
+                }
+            } else if (currentScreen === "screen4") {
+                if (selectedRow.includes("Clear") && selectedRow.includes("Read")) {
+                    allOptionsDisplay.innerHTML = "Clear | Read";
+                } else {
+                    allOptionsDisplay.innerHTML = selectedRow.join(" | ");
+                }
+                const displayOptions = ["BACK", ...selectedRow];
+                optionDisplay.textContent = displayOptions[currentIndex];
+            } else if (currentScreen === "doneScreen") {
+                const options = ["BACK", ...screens.doneScreen];
+                allOptionsDisplay.innerHTML = screens.doneScreen
+                    .map(option => `<div>${option}</div>`)
+                    .join("");
+                optionDisplay.textContent = options[currentIndex];
+            } else {
+                const options = getOptionsForScreen(currentScreen);
+                allOptionsDisplay.innerHTML = screens[currentScreen]
+                    .filter(option => option !== "BACK")
+                    .map(option => `<div>${option}</div>`)
+                    .join("");
+                optionDisplay.textContent = options[currentIndex];
+            }
+
+            typedTextDisplay.textContent = `Typed: ${typingBuffer}`;
+        }
+
+        function handleSelection() {
+            const options = currentScreen === "screen4" ? ["BACK", ...selectedRow] : getOptionsForScreen(currentScreen);
+            const selectedOption = options[currentIndex];
+
+            if (currentScreen !== "screen3") {
+                speak(selectedOption);
+            }
+
+            if (selectedOption === "BACK") {
+                if (currentScreen === "screen2") {
+                    currentScreen = "screen1";
+                } else if (currentScreen === "painScreen" || currentScreen === "positionScreen" || currentScreen === "scratchScreen") {
+                    currentScreen = "screen2";
+                } else if (currentScreen === "screen4") {
+                    currentScreen = "screen3";
+                } else if (currentScreen === "screen3") {
+                    currentScreen = "screen1";
+                } else if (currentScreen === "doneScreen") {
+                    currentScreen = "screen3";
+                }
+                currentIndex = 0;
+            } else if (currentScreen === "screen1") {
+                // Fix screen1 navigation
+                if (selectedOption === "Common Phrases") {
+                    currentScreen = "screen2";
+                    currentIndex = 0;
+                    startCycling();
+                } else if (selectedOption === "Typing") {
+                    currentScreen = "screen3";
+                    currentIndex = 0;
+                    startCycling();
+                } else if (selectedOption === "Yes" || selectedOption === "No") {
+                    speak(selectedOption);
+                }
+            } else if (currentScreen === "screen2") {
+                if (selectedOption === "Pain") {
+                    currentScreen = "painScreen";
+                    currentIndex = 0;
+                    startCycling();
+                } else if (selectedOption === "Shift Position") {
+                    currentScreen = "positionScreen";
+                    currentIndex = 0;
+                    startCycling();
+                } else if (selectedOption === "Scratch") {
+                    currentScreen = "scratchScreen";
+                    currentIndex = 0;
+                    startCycling();
+                }
+            } else if (currentScreen === "screen3") {
+                if (currentIndex > 0) {
+                    const rowIndex = currentIndex - 1;
+                    if (rowIndex < screens.screen3.length) {
+                        const currentRow = screens.screen3[rowIndex];
+                        if (selectedOption === "Clear | Read") {
+                            selectedRow = ["Clear", "Read"];
+                            currentScreen = "screen4";
+                            currentIndex = 0;
+                            updateDisplay();
+                            startCycling();
+                        } else {
+                            selectedRow = currentRow;
+                            currentScreen = "screen4";
+                            currentIndex = 0;
+                            startCycling();
+                        }
+                    }
+                }
+            } else if (currentScreen === "screen4") {
+                if (selectedOption === "Clear") {
+                    typingBuffer = "";
+                    speak("Cleared");
+                    currentScreen = "screen3";
+                    currentIndex = 0;
+                    startCycling();
+                } else if (selectedOption === "Read") {
+                    if (typingBuffer.trim() === "") {
+                        speak("Nothing has been typed yet");
+                    } else {
+                        speak(typingBuffer);
+                    }
+                    currentScreen = "screen3";
+                    currentIndex = 0;
+                    startCycling();
+                } else if (selectedOption === "Number") {
+                    selectedRow = screens.numbers;
+                    currentIndex = 0;
+                    startCycling();
+                } else if (selectedOption === "Space") {
+                    typingBuffer += " ";
+                    currentScreen = "screen3";
+                    currentIndex = 0;
+                    startCycling();
+                } else if (selectedOption === "Delete Letter") {
+                    typingBuffer = typingBuffer.slice(0, -1);
+                    currentScreen = "screen3";
+                    currentIndex = 0;
+                    startCycling();
+                } else if (selectedOption === "Delete Word") {
+                    typingBuffer = typingBuffer.replace(/\s*\S+\s*$/, '');
+                    currentScreen = "screen3";
+                    currentIndex = 0;
+                    startCycling();
+                } else if (selectedOption !== "BACK") {
+                    typingBuffer += selectedOption;
+                    currentScreen = "screen3";
+                    currentIndex = 0;
+                    startCycling();
+                }
+            }
+            
+            updateDisplay();
+        }
+
+        function startCycling() {
+            if (window.cycleInterval) {
+                clearInterval(window.cycleInterval);
+            }
+            
+            currentIndex = 0;
+            updateDisplay();
+            
+            window.cycleInterval = setInterval(() => {
+                let options;
+                if (currentScreen === "screen4" && selectedRow.includes("Clear")) {
+                    options = ["BACK", "Clear", "Read"];
+                } else {
+                    options = currentScreen === "screen4" ? ["BACK", ...selectedRow] : getOptionsForScreen(currentScreen);
+                }
+                
+                currentIndex = (currentIndex + 1) % options.length;
+                updateDisplay();
+                
+            }, currentIndex === 0 ? CYCLE_INTERVAL * FIRST_OPTION_MULTIPLIER : CYCLE_INTERVAL);
+        }
+
+        function speak(text) {
+            window.speechSynthesis.cancel();  // Cancel any ongoing speech
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1.0;  // Set a consistent speech rate
+            
+            // Clean up the text for letters
+            let cleanText = text;
+            if (text.length === 1 && text.match(/[A-Z]/)) {
+                cleanText = text.toLowerCase();  // Just say the letter without "capital"
+            }
+            
+            utterance.text = cleanText;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Add this to ensure voices are loaded
+        window.speechSynthesis.onvoiceschanged = () => {
+            speak(''); // This triggers voice loading
+        };
+
+        // Event listeners
+        selectButton.addEventListener("click", handleSelection);
+
+        // Initialize display
+        updateDisplay();
+
+        // Initialize the display immediately
+        function initializeApp() {
+            updateDisplay();
+            startCycling();
+        }
+
+        // Call initialization when the page loads
+        window.onload = initializeApp;
+    </script>
+</body>
+</html>
