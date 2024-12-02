@@ -5,63 +5,77 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Communication App</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin: 30px; padding: 0; }
-        .container { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; }
-        .option { font-size: 24px; margin: 20px; }
-        .button { padding: 20px 40px; font-size: 18px; cursor: pointer; margin: 10px; }
-        #typedText { margin-top: 20px; font-size: 24px; }
-        .options-preview { font-size: 18px; margin-bottom: 20px; color: gray; text-align: left; }
-        * {
-            -webkit-user-select: none;
-            -moz-user-select: none;
-            -ms-user-select: none;
-            user-select: none;
-        }
-        #selectButton {
-            -webkit-user-select: auto;
-            -moz-user-select: auto;
-            -ms-user-select: auto;
-            user-select: auto;
-        }
         body {
-            font-size: 500%;  /* Make all text 5x bigger */
+            font-size: 60px;
+            margin: 0;
+            padding: 20px;
         }
-        
+
+        /* Top section - preview options */
+        #allOptionsDisplay {
+            position: fixed;
+            left: 20px;
+            right: 20px;
+            top: 20px;
+            height: 30vh;  /* Take up 30% of viewport height */
+            padding: 20px;
+            overflow-y: auto;
+            font-size: 30px;
+            text-align: center;
+            border-bottom: 2px solid #ccc;
+        }
+
+        /* Middle section - cycling options */
+        #optionDisplay {
+            position: fixed;
+            left: 20px;
+            right: 20px;
+            top: calc(30vh + 40px);  /* Position below preview */
+            height: 30vh;
+            font-size: 90px;
+            text-align: center;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* Bottom section - typed text */
+        #typedTextDisplay {
+            position: fixed;
+            left: 20px;
+            right: 20px;
+            top: calc(60vh + 60px);  /* Position below cycling */
+            height: 20vh;
+            font-size: 60px;
+            padding: 20px;
+            text-align: center;
+        }
+
         .green-text {
-            color: #00AA00;  /* Bright green */
+            color: #00AA00;
             font-weight: bold;
         }
         
         .red-text {
-            color: #FF0000;  /* Bright red */
+            color: #FF0000;
             font-weight: bold;
         }
-        
-        #optionDisplay {
-            font-size: 120%;  /* Make the current option even bigger relative to the new base size */
-            margin: 30px;     /* Increased margin */
-        }
 
-        #allOptionsDisplay {
-            margin: 30px;     /* Increased margin */
-            line-height: 1.3; /* Add some space between lines */
-        }
-
-        #typedTextDisplay {
-            margin: 30px;     /* Increased margin */
-        }
-
-        div {
-            margin: 10px 0;   /* Add vertical spacing between divs */
+        #selectButton {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            font-size: 15px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="options-preview" id="allOptions"></div>
-        <div class="option" id="currentOption"></div>
-        <div id="typedText"></div>
-        <button class="button" id="selectButton">Tap Anywhere to Select</button>
+        <div id="allOptionsDisplay"></div>
+        <div id="optionDisplay"></div>
+        <div id="typedTextDisplay"></div>
+        <button id="selectButton">Tap Anywhere to Select</button>
     </div>
 
     <script>
@@ -95,9 +109,9 @@
         let isFirstOption = true;
 
         // Get DOM elements
-        const allOptionsDisplay = document.getElementById("allOptions");
-        const optionDisplay = document.getElementById("currentOption");
-        const typedTextDisplay = document.getElementById("typedText");
+        const allOptionsDisplay = document.getElementById("allOptionsDisplay");
+        const optionDisplay = document.getElementById("optionDisplay");
+        const typedTextDisplay = document.getElementById("typedTextDisplay");
         const selectButton = document.getElementById("selectButton");
 
         // Initialize the app
