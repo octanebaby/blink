@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Communication App</title>
     <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin: 0; padding: 0; }
+        body { font-family: Arial, sans-serif; text-align: center; margin: 30px; padding: 0; }
         .container { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; }
         .option { font-size: 24px; margin: 20px; }
         .button { padding: 20px 40px; font-size: 18px; cursor: pointer; margin: 10px; }
@@ -23,6 +23,37 @@
             -ms-user-select: auto;
             user-select: auto;
         }
+        body {
+            font-size: 500%;  /* Make all text 5x bigger */
+        }
+        
+        .green-text {
+            color: #00AA00;  /* Bright green */
+            font-weight: bold;
+        }
+        
+        .red-text {
+            color: #FF0000;  /* Bright red */
+            font-weight: bold;
+        }
+        
+        #optionDisplay {
+            font-size: 120%;  /* Make the current option even bigger relative to the new base size */
+            margin: 30px;     /* Increased margin */
+        }
+
+        #allOptionsDisplay {
+            margin: 30px;     /* Increased margin */
+            line-height: 1.3; /* Add some space between lines */
+        }
+
+        #typedTextDisplay {
+            margin: 30px;     /* Increased margin */
+        }
+
+        div {
+            margin: 10px 0;   /* Add vertical spacing between divs */
+        }
     </style>
 </head>
 <body>
@@ -30,7 +61,7 @@
         <div class="options-preview" id="allOptions"></div>
         <div class="option" id="currentOption"></div>
         <div id="typedText"></div>
-        <button class="button" id="selectButton">Tap to Select</button>
+        <button class="button" id="selectButton">Tap Anywhere to Select</button>
     </div>
 
     <script>
@@ -82,7 +113,7 @@
             // Ensure select button is focusable
             const selectButton = document.getElementById('selectButton');
             selectButton.tabIndex = 0;
-            selectButton.setAttribute('aria-label', 'Tap to Select');
+            selectButton.setAttribute('aria-label', 'Tap Anywhere to Select');
 
             updateDisplay();
             startCycling();
@@ -117,22 +148,21 @@
         }
 
         function updateDisplay() {
+            const greenWords = ["Yes", "No", "Pee", "Poop", "Phlegm", "iTerraCare", "Read"];
+            
             if (currentScreen === "screen3") {
-                // Always show all rows
                 allOptionsDisplay.innerHTML = screens.screen3
                     .map(row => row.join(" | "))
                     .map(line => `<div>${line}</div>`)
                     .join("");
                 
-                // Show current selection
                 if (currentIndex === 0) {
-                    optionDisplay.textContent = "BACK";
+                    optionDisplay.innerHTML = '<span class="red-text">BACK</span>';
                 } else {
                     const rowIndex = currentIndex - 1;
                     if (rowIndex < screens.screen3.length) {
-                        // Check if we're on the last row (Clear|Read)
                         if (rowIndex === screens.screen3.length - 1) {
-                            optionDisplay.textContent = screens.screen3[5].join(" | ");  // Display as "Clear | Read"
+                            optionDisplay.textContent = screens.screen3[5].join(" | ");
                         } else {
                             optionDisplay.textContent = screens.screen3[rowIndex].join(", ");
                         }
@@ -140,25 +170,49 @@
                 }
             } else if (currentScreen === "screen4") {
                 if (selectedRow.includes("Clear") && selectedRow.includes("Read")) {
-                    allOptionsDisplay.innerHTML = "Clear | Read";
+                    allOptionsDisplay.innerHTML = "Clear | <span class='green-text'>Read</span>";
                 } else {
                     allOptionsDisplay.innerHTML = selectedRow.join(" | ");
                 }
                 const displayOptions = ["BACK", ...selectedRow];
-                optionDisplay.textContent = displayOptions[currentIndex];
-            } else if (currentScreen === "doneScreen") {
-                const options = ["BACK", ...screens.doneScreen];
-                allOptionsDisplay.innerHTML = screens.doneScreen
-                    .map(option => `<div>${option}</div>`)
-                    .join("");
-                optionDisplay.textContent = options[currentIndex];
+                const currentOption = displayOptions[currentIndex];
+                
+                if (currentOption === "BACK") {
+                    optionDisplay.innerHTML = '<span class="red-text">BACK</span>';
+                } else if (currentOption === "Read") {
+                    optionDisplay.innerHTML = '<span class="green-text">Read</span>';
+                } else {
+                    optionDisplay.textContent = currentOption;
+                }
             } else {
                 const options = getOptionsForScreen(currentScreen);
-                allOptionsDisplay.innerHTML = screens[currentScreen]
-                    .filter(option => option !== "BACK")
-                    .map(option => `<div>${option}</div>`)
-                    .join("");
-                optionDisplay.textContent = options[currentIndex];
+                
+                // Special handling for pain, scratch, and position screens
+                if (currentScreen === "painScreen" || currentScreen === "scratchScreen" || currentScreen === "positionScreen") {
+                    allOptionsDisplay.innerHTML = screens[currentScreen]
+                        .map(option => `<div class="green-text">${option}</div>`)
+                        .join("");
+                } else {
+                    allOptionsDisplay.innerHTML = screens[currentScreen]
+                        .filter(option => option !== "BACK")
+                        .map(option => {
+                            if (greenWords.includes(option)) {
+                                return `<div class="green-text">${option}</div>`;
+                            }
+                            return `<div>${option}</div>`;
+                        })
+                        .join("");
+                }
+                
+                const currentOption = options[currentIndex];
+                if (currentOption === "BACK") {
+                    optionDisplay.innerHTML = '<span class="red-text">BACK</span>';
+                } else if (greenWords.includes(currentOption) || 
+                          ["painScreen", "scratchScreen", "positionScreen"].includes(currentScreen)) {
+                    optionDisplay.innerHTML = `<span class="green-text">${currentOption}</span>`;
+                } else {
+                    optionDisplay.textContent = currentOption;
+                }
             }
 
             typedTextDisplay.textContent = `Typed: ${typingBuffer}`;
@@ -333,6 +387,20 @@
 
         // Call initialization when the page loads
         window.onload = initializeApp;
+
+        // Add this at the end of your initialization code
+        document.addEventListener('click', function(event) {
+            // Prevent double-firing if button is clicked
+            if (event.target.id !== 'selectButton') {
+                handleSelection();
+            }
+        });
+
+        // Update the button event listener to prevent double selection
+        document.getElementById('selectButton').addEventListener('click', function(event) {
+            event.stopPropagation();  // Prevent the click from bubbling up to document
+            handleSelection();
+        });
     </script>
 </body>
 </html>
