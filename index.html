@@ -17,27 +17,12 @@
             left: 20px;
             right: 20px;
             top: 20px;
-            height: 30vh;  /* Take up 30% of viewport height */
+            height: 60vh;
             padding: 20px;
             overflow-y: auto;
             font-size: 30px;
-            text-align: center;
+            text-align: left;
             border-bottom: 2px solid #ccc;
-        }
-
-        /* Middle section - cycling options */
-        #optionDisplay {
-            position: fixed;
-            left: 20px;
-            right: 20px;
-            top: calc(30vh + 40px);  /* Position below preview */
-            height: 30vh;
-            font-size: 90px;
-            text-align: center;
-            padding: 20px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
         }
 
         /* Bottom section - typed text */
@@ -45,11 +30,11 @@
             position: fixed;
             left: 20px;
             right: 20px;
-            top: calc(60vh + 60px);  /* Position below cycling */
+            top: calc(60vh + 40px);
             height: 20vh;
             font-size: 60px;
             padding: 20px;
-            text-align: center;
+            text-align: left;
         }
 
         .green-text {
@@ -60,6 +45,12 @@
         .red-text {
             color: #FF0000;
             font-weight: bold;
+        }
+
+        .highlight {
+            background-color: #ffeb3b;
+            padding: 2px 5px;
+            border-radius: 3px;
         }
 
         #selectButton {
@@ -73,7 +64,6 @@
 <body>
     <div class="container">
         <div id="allOptionsDisplay"></div>
-        <div id="optionDisplay"></div>
         <div id="typedTextDisplay"></div>
         <button id="selectButton">Tap Anywhere to Select</button>
     </div>
@@ -112,7 +102,6 @@
 
         // Get DOM elements
         const allOptionsDisplay = document.getElementById("allOptionsDisplay");
-        const optionDisplay = document.getElementById("optionDisplay");
         const typedTextDisplay = document.getElementById("typedTextDisplay");
         const selectButton = document.getElementById("selectButton");
 
@@ -158,6 +147,8 @@
                 return ["BACK", ...screens[screen]];
             } else if (screen === "screen2") {
                 return ["BACK", ...screens[screen]];
+            } else if (screen === "numbers") {
+                return ["BACK", ...screens.numbers];
             } else {
                 return screens[screen];
             }
@@ -165,82 +156,74 @@
 
         function updateDisplay() {
             const greenWords = ["Yes", "No", "Pee", "Poop", "Phlegm", "iTerraCare", "Read"];
+            const options = getOptionsForScreen(currentScreen);
             
-            if (currentScreen === "screen3") {
-                allOptionsDisplay.innerHTML = screens.screen3
-                    .map(row => row.join(" | "))
-                    .map(line => `<div>${line}</div>`)
-                    .join("");
-                
-                if (currentIndex === 0) {
-                    optionDisplay.innerHTML = '<span class="red-text">BACK</span>';
-                } else {
-                    const rowIndex = currentIndex - 1;
-                    if (rowIndex < screens.screen3.length) {
-                        if (rowIndex === screens.screen3.length - 1) {
-                            optionDisplay.textContent = screens.screen3[5].join(" | ");
-                        } else {
-                            optionDisplay.textContent = screens.screen3[rowIndex].join(", ");
-                        }
-                    }
-                }
-            } else if (currentScreen === "screen4") {
-                if (selectedRow.includes("Clear") && selectedRow.includes("Read")) {
-                    allOptionsDisplay.innerHTML = "Clear | <span class='green-text'>Read</span>";
-                } else {
-                    allOptionsDisplay.innerHTML = selectedRow.join(" | ");
-                }
-                const displayOptions = ["BACK", ...selectedRow];
-                const currentOption = displayOptions[currentIndex];
-                
-                if (currentOption === "BACK") {
-                    optionDisplay.innerHTML = '<span class="red-text">BACK</span>';
-                } else if (currentOption === "Read") {
-                    optionDisplay.innerHTML = '<span class="green-text">Read</span>';
-                } else {
-                    optionDisplay.textContent = currentOption;
-                }
-            } else {
-                const options = getOptionsForScreen(currentScreen);
-                
-                // Special handling for pain, scratch, and position screens
-                if (currentScreen === "painScreen" || currentScreen === "scratchScreen" || currentScreen === "positionScreen") {
-                    allOptionsDisplay.innerHTML = screens[currentScreen]
-                        .map(option => `<div class="green-text">${option}</div>`)
-                        .join("");
-                } else {
-                    allOptionsDisplay.innerHTML = screens[currentScreen]
-                        .filter(option => option !== "BACK")
-                        .map(option => {
-                            if (greenWords.includes(option)) {
-                                return `<div class="green-text">${option}</div>`;
-                            }
-                            return `<div>${option}</div>`;
-                        })
-                        .join("");
-                }
-                
-                const currentOption = options[currentIndex];
-                if (currentOption === "BACK") {
-                    optionDisplay.innerHTML = '<span class="red-text">BACK</span>';
-                } else if (greenWords.includes(currentOption) || 
-                          ["painScreen", "scratchScreen", "positionScreen"].includes(currentScreen)) {
-                    optionDisplay.innerHTML = `<span class="green-text">${currentOption}</span>`;
-                } else {
-                    optionDisplay.textContent = currentOption;
-                }
+            // For screen1 (main menu)
+            if (currentScreen === "screen1") {
+                allOptionsDisplay.innerHTML = screens.screen1
+                    .map((option, index) => {
+                        const isHighlighted = index === currentIndex;
+                        const isGreen = greenWords.includes(option);
+                        return `<div class="${isGreen ? 'green-text' : ''} ${isHighlighted ? 'highlight' : ''}">${option}</div>`;
+                    })
+                    .join('');
+            }
+            // For screen2 (common phrases)
+            else if (currentScreen === "screen2") {
+                allOptionsDisplay.innerHTML = ["<span class='red-text'>BACK</span>", ...screens.screen2]
+                    .map((option, index) => {
+                        const isHighlighted = index === currentIndex;
+                        const isGreen = greenWords.includes(option);
+                        return `<div class="${isGreen ? 'green-text' : ''} ${isHighlighted ? 'highlight' : ''}">${option}</div>`;
+                    })
+                    .join('');
+            }
+            // For screen3 (typing menu)
+            else if (currentScreen === "screen3") {
+                allOptionsDisplay.innerHTML = ["<span class='red-text'>BACK</span>", 
+                    ...screens.screen3.map(row => row.join(" | "))]
+                    .map((row, index) => {
+                        const isHighlighted = index === currentIndex;
+                        return `<div class="${isHighlighted ? 'highlight' : ''}">${row}</div>`;
+                    })
+                    .join('');
+            }
+            // For screen4 (letter selection)
+            else if (currentScreen === "screen4") {
+                allOptionsDisplay.innerHTML = ["<span class='red-text'>BACK</span>", ...selectedRow]
+                    .map((option, index) => {
+                        const isHighlighted = index === currentIndex;
+                        return `<div class="${isHighlighted ? 'highlight' : ''}">${option}</div>`;
+                    })
+                    .join('');
+            }
+            // For pain, position, and scratch screens
+            else if (["painScreen", "positionScreen", "scratchScreen"].includes(currentScreen)) {
+                allOptionsDisplay.innerHTML = ["<span class='red-text'>BACK</span>", ...screens[currentScreen]]
+                    .map((option, index) => {
+                        const isHighlighted = index === currentIndex;
+                        return `<div class="${option === 'BACK' ? '' : 'green-text'} ${isHighlighted ? 'highlight' : ''}">${option}</div>`;
+                    })
+                    .join('');
+            }
+            // For numbers screen
+            else if (currentScreen === "numbers") {
+                allOptionsDisplay.innerHTML = ["<span class='red-text'>BACK</span>", ...screens.numbers]
+                    .map((option, index) => {
+                        const isHighlighted = index === currentIndex;
+                        return `<div class="${isHighlighted ? 'highlight' : ''}">${option}</div>`;
+                    })
+                    .join('');
             }
 
-            typedTextDisplay.textContent = `Typed: ${typingBuffer}`;
+            typedTextDisplay.textContent = `[TYPING]: ${typingBuffer}`;
         }
 
         function handleSelection() {
             const options = currentScreen === "screen4" ? ["BACK", ...selectedRow] : getOptionsForScreen(currentScreen);
             const selectedOption = options[currentIndex];
 
-            if (currentScreen !== "screen3") {
-                speak(selectedOption);
-            }
+            console.log('Current Screen:', currentScreen, 'Selected Option:', selectedOption); // Debug
 
             if (selectedOption === "BACK") {
                 if (currentScreen === "screen2") {
@@ -251,63 +234,59 @@
                     currentScreen = "screen3";
                 } else if (currentScreen === "screen3") {
                     currentScreen = "screen1";
-                } else if (currentScreen === "doneScreen") {
+                } else if (currentScreen === "numbers") {
                     currentScreen = "screen3";
                 }
                 currentIndex = 0;
-            } else if (currentScreen === "screen1") {
-                // Fix screen1 navigation
+            } 
+            // Handle screen1 selections
+            else if (currentScreen === "screen1") {
                 if (selectedOption === "Common Phrases") {
                     currentScreen = "screen2";
                     currentIndex = 0;
-                    startCycling();
                 } else if (selectedOption === "Typing") {
                     currentScreen = "screen3";
                     currentIndex = 0;
-                    startCycling();
-                } else if (selectedOption === "Yes" || selectedOption === "No") {
-                    speak(selectedOption);
                 }
-            } else if (currentScreen === "screen2") {
+            }
+            // Handle screen2 selections
+            else if (currentScreen === "screen2") {
                 if (selectedOption === "Pain") {
                     currentScreen = "painScreen";
-                    currentIndex = 0;
-                    startCycling();
                 } else if (selectedOption === "Shift Position") {
                     currentScreen = "positionScreen";
-                    currentIndex = 0;
-                    startCycling();
                 } else if (selectedOption === "Scratch") {
                     currentScreen = "scratchScreen";
+                }
+                currentIndex = 0;
+            }
+            // Handle screen3 selections (typing menu)
+            else if (currentScreen === "screen3" && currentIndex > 0) {
+                const rowIndex = currentIndex - 1;
+                if (rowIndex < screens.screen3.length) {
+                    selectedRow = screens.screen3[rowIndex];
+                    currentScreen = "screen4";
                     currentIndex = 0;
-                    startCycling();
                 }
-            } else if (currentScreen === "screen3") {
-                if (currentIndex > 0) {
-                    const rowIndex = currentIndex - 1;
-                    if (rowIndex < screens.screen3.length) {
-                        const currentRow = screens.screen3[rowIndex];
-                        if (selectedOption === "Clear | Read") {
-                            selectedRow = ["Clear", "Read"];
-                            currentScreen = "screen4";
-                            currentIndex = 0;
-                            updateDisplay();
-                            startCycling();
-                        } else {
-                            selectedRow = currentRow;
-                            currentScreen = "screen4";
-                            currentIndex = 0;
-                            startCycling();
-                        }
-                    }
+            }
+            // Handle screen4 selections (individual letters/actions)
+            else if (currentScreen === "screen4") {
+                if (selectedOption === "Number") {
+                    currentScreen = "numbers";
+                    currentIndex = 0;
                 }
-            } else if (currentScreen === "screen4") {
-                if (selectedOption === "Clear") {
-                    typingBuffer = "";
-                    speak("Cleared");
+                else if (selectedOption === "Space") {
+                    typingBuffer += " ";
                     currentScreen = "screen3";
                     currentIndex = 0;
-                    startCycling();
+                } else if (selectedOption === "Delete Letter") {
+                    typingBuffer = typingBuffer.slice(0, -1);
+                    currentScreen = "screen3";
+                    currentIndex = 0;
+                } else if (selectedOption === "Delete Word") {
+                    typingBuffer = typingBuffer.replace(/\s*\S+\s*$/, '');
+                    currentScreen = "screen3";
+                    currentIndex = 0;
                 } else if (selectedOption === "Read") {
                     if (typingBuffer.trim() === "") {
                         speak("Nothing has been typed yet");
@@ -316,35 +295,40 @@
                     }
                     currentScreen = "screen3";
                     currentIndex = 0;
-                    startCycling();
-                } else if (selectedOption === "Number") {
-                    selectedRow = screens.numbers;
-                    currentIndex = 0;
-                    startCycling();
-                } else if (selectedOption === "Space") {
-                    typingBuffer += " ";
+                } else if (selectedOption === "Clear") {
+                    typingBuffer = "";
+                    speak("Cleared");
                     currentScreen = "screen3";
                     currentIndex = 0;
-                    startCycling();
-                } else if (selectedOption === "Delete Letter") {
-                    typingBuffer = typingBuffer.slice(0, -1);
-                    currentScreen = "screen3";
-                    currentIndex = 0;
-                    startCycling();
-                } else if (selectedOption === "Delete Word") {
-                    typingBuffer = typingBuffer.replace(/\s*\S+\s*$/, '');
-                    currentScreen = "screen3";
-                    currentIndex = 0;
-                    startCycling();
                 } else if (selectedOption !== "BACK") {
                     typingBuffer += selectedOption;
                     currentScreen = "screen3";
                     currentIndex = 0;
-                    startCycling();
                 }
             }
-            
+            // Handle numbers screen selections
+            else if (currentScreen === "numbers") {
+                if (selectedOption !== "BACK") {
+                    typingBuffer += selectedOption;
+                    currentScreen = "screen3";
+                    currentIndex = 0;
+                }
+            }
+
+            // Special screens
+            if (["painScreen", "positionScreen", "scratchScreen"].includes(currentScreen)) {
+                if (selectedOption !== "BACK") {
+                    speak(selectedOption);
+                }
+            }
+
+            // Always speak Yes/No
+            if (selectedOption === "Yes" || selectedOption === "No") {
+                speak(selectedOption);
+            }
+
             updateDisplay();
+            startCycling();
         }
 
         function startCycling() {
